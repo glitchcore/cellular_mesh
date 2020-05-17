@@ -12,7 +12,7 @@ const SIZE_Y = 10;
 let mesh = {
     points: [...new Array(SIZE_X).keys()].map(item => new Array(SIZE_Y)),
     edges: [],
-    mouse: null
+    physics: true
 };
 
 function update(delta, now, convert, stage) {
@@ -66,21 +66,7 @@ function create_mesh(stage, convert_inv) {
 
             // console.log("x", x, "y",y);
 
-            let point = {
-                graphics: graphics,
-                coordinates: {x: (x + 0.5)/SIZE_X - 0.5, y: (y + 0.5)/SIZE_Y - 0.5}
-            };
-
-            graphics.on("pointermove", event => {
-                if(graphics.is_dragging) {
-                    // graphics.x = event.data.global.x;
-                    // graphics.y = event.data.global.y;
-
-                    point.coordinates = convert_inv(event.data.global);
-                }
-            });
-
-            mesh.points[x][y] = point;
+            let point_edges = [];
 
             // create edges
             for(let i = 0; i < 4; i++) {
@@ -104,11 +90,30 @@ function create_mesh(stage, convert_inv) {
                     case 3: next_vertex = {x: x, y: y + 1}; break;
                 }
 
-                mesh.edges.push({
+                point_edges.push({
                     vertexes:[{x, y}, next_vertex],
                     graphics: new Graphics()
                 })
             }
+
+            point_edges.forEach(edge => mesh.edges.push(edge));
+
+            let point = {
+                graphics: graphics,
+                coordinates: {x: (x + 0.5)/SIZE_X - 0.5, y: (y + 0.5)/SIZE_Y - 0.5},
+                edges: point_edges
+            };
+
+            graphics.on("pointermove", event => {
+                if(graphics.is_dragging) {
+                    // graphics.x = event.data.global.x;
+                    // graphics.y = event.data.global.y;
+
+                    point.coordinates = convert_inv(event.data.global);
+                }
+            });
+
+            mesh.points[x][y] = point;
         }
     }
 }
