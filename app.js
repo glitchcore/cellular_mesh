@@ -21,14 +21,14 @@ function update(delta, now, convert) {
 
 let intro_scene;
 
-const SIZE_X = 10;
-const SIZE_Y = 10;
+const SIZE_X = 11;
+const SIZE_Y = 11;
 
 
 
 function create_mesh(stage) {
-    for(let x = -SIZE_X/2; x < SIZE_X/2; x++) {
-        for(let y = -SIZE_Y/2; y < SIZE_Y/2; y++) {
+    for(let x = -(SIZE_X/2 - 0.5); x <= SIZE_X/2; x++) {
+        for(let y = -(SIZE_Y/2 - 0.5); y <= SIZE_Y/2; y++) {
 
             let point = new Graphics()
                 .lineStyle(0, 0, 0)
@@ -36,6 +36,8 @@ function create_mesh(stage) {
                 .drawCircle(0, 0, 5);
 
             stage.addChild(point);
+
+            console.log("x", x, "y",y);
 
             mesh.points.push({
                 graphic: point,
@@ -51,8 +53,8 @@ function app(pixi) {
     const MARGIN = 0.05;
 
     let convert = (origin) => ({
-        x: (MARGIN + (origin.x/2 + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.width,
-        y: (MARGIN + (origin.y/2 + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.height,
+        x: (MARGIN + (origin.x + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.height + (pixi.renderer.width - pixi.renderer.height)/2,
+        y: (MARGIN + (origin.y + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.height,
     });
 
     PIXI.utils.sayHello("mesh hello!");
