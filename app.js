@@ -6,29 +6,45 @@ function key_handler(key_code, value) {
     console.log(key_code, value ? "pressed" : "released");
 }
 
+const SIZE_X = 10;
+const SIZE_Y = 10;
+
 let mesh = {
-    points: [],
+    points: [...new Array(SIZE_X).keys()].map(item => new Array(SIZE_Y)),
     edges: []
 };
 
-function update(delta, now, convert) {
-    mesh.points.forEach(item => {
+function update(delta, now, convert, stage) {
+    mesh.points.flat().forEach(item => {
         let point = convert(item.coordinates);
-        item.graphic.x = point.x;
-        item.graphic.y = point.y;
+        item.graphics.x = point.x;
+        item.graphics.y = point.y;
+    });
+
+    mesh.edges.forEach(item => {
+        let begin_vertex_id = item.vertexes[0];
+        let end_vertex_id = item.vertexes[1];
+
+        let begin_vertex = mesh.points[begin_vertex_id.x][begin_vertex_id.y];
+        let end_vertex = mesh.points[end_vertex_id.x][end_vertex_id.y];
+
+        let begin = convert(begin_vertex.coordinates);
+        let end = convert(end_vertex.coordinates);
+
+        item.graphics.destroy();
+        item.graphics = new Graphics()
+            .lineStyle(2, 0x44AAFF, 0.8)
+            .moveTo(begin.x, begin.y)
+            .lineTo(end.x, end.y);
+        stage.addChild(item.graphics);
     })
 }
 
-let intro_scene;
-
-const SIZE_X = 11;
-const SIZE_Y = 11;
-
-
-
 function create_mesh(stage) {
-    for(let x = -(SIZE_X/2 - 0.5); x <= SIZE_X/2; x++) {
-        for(let y = -(SIZE_Y/2 - 0.5); y <= SIZE_Y/2; y++) {
+    console.log(mesh);
+
+    for(let x = 0; x < SIZE_X; x++) {
+        for(let y = 0; y < SIZE_Y; y++) {
 
             let point = new Graphics()
                 .lineStyle(0, 0, 0)
@@ -37,12 +53,40 @@ function create_mesh(stage) {
 
             stage.addChild(point);
 
-            console.log("x", x, "y",y);
+            // console.log("x", x, "y",y);
 
-            mesh.points.push({
-                graphic: point,
-                coordinates: {x: x/SIZE_X, y: y/SIZE_Y}
-            });
+            mesh.points[x][y] = {
+                graphics: point,
+                coordinates: {x: (x + 0.5)/SIZE_X - 0.5, y: (y + 0.5)/SIZE_Y - 0.5}
+            };
+
+            // create edges
+            for(let i = 0; i < 4; i++) {
+                if(x == 0 && i == 0) continue;
+                if(y == 0 && i == 1) continue;
+                if(x == SIZE_X - 1 && i == 2) continue;
+                if(y == SIZE_Y - 1 && i == 3) continue;
+
+                if(mesh.edges.filter(
+                    item => item.vertexes[1].x == x && item.vertexes[1].y == y
+                ).length > 0) {
+                    continue;
+                }
+
+                let next_vertex = {x: NaN, y: NaN};
+
+                switch(i) {
+                    case 0: next_vertex = {x: x - 1, y: y}; break;
+                    case 1: next_vertex = {x: x, y: y - 1}; break;
+                    case 2: next_vertex = {x: x + 1, y: y}; break;
+                    case 3: next_vertex = {x: x, y: y + 1}; break;
+                }
+
+                mesh.edges.push({
+                    vertexes:[{x, y}, next_vertex],
+                    graphics: new Graphics()
+                })
+            }
         }
     }
 }
@@ -58,6 +102,10 @@ function app(pixi) {
     });
 
     PIXI.utils.sayHello("mesh hello!");
+
+    create_mesh(stage, convert);
+
+    // console.log(mesh.edges);
 
     window.addEventListener(
         "keydown",
@@ -79,7 +127,5 @@ function app(pixi) {
         false
     );
 
-    pixi.ticker.add(delta => update(delta, performance.now(), convert));
-
-    create_mesh(stage, convert);
+    pixi.ticker.add(delta => update(delta, performance.now(), convert, stage));
 }
