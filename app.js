@@ -11,14 +11,17 @@ const SIZE_Y = 10;
 
 let mesh = {
     points: [...new Array(SIZE_X).keys()].map(item => new Array(SIZE_Y)),
-    edges: []
+    edges: [],
+    mouse: null
 };
 
 function update(delta, now, convert, stage) {
     mesh.points.flat().forEach(item => {
-        let point = convert(item.coordinates);
-        item.graphics.x = point.x;
-        item.graphics.y = point.y;
+        // if(!item.graphics.is_dragging) {
+            let point = convert(item.coordinates);
+            item.graphics.x = point.x;
+            item.graphics.y = point.y;
+        // }
     });
 
     mesh.edges.forEach(item => {
@@ -36,29 +39,48 @@ function update(delta, now, convert, stage) {
             .lineStyle(2, 0x44AAFF, 0.8)
             .moveTo(begin.x, begin.y)
             .lineTo(end.x, end.y);
+
         stage.addChild(item.graphics);
-    })
+    });
 }
 
-function create_mesh(stage) {
+function create_mesh(stage, convert_inv) {
     console.log(mesh);
 
     for(let x = 0; x < SIZE_X; x++) {
         for(let y = 0; y < SIZE_Y; y++) {
 
-            let point = new Graphics()
+            let graphics = new Graphics()
                 .lineStyle(0, 0, 0)
                 .beginFill(0x4499FF, 1)
                 .drawCircle(0, 0, 5);
 
-            stage.addChild(point);
+            graphics.is_dragging = false;
+
+            graphics.interactive = true;
+            graphics.on("pointerdown", event => {graphics.is_dragging = true});
+            graphics.on("pointerup", event => {graphics.is_dragging = false});
+            graphics.on("pointerupoutside", event => {graphics.is_dragging = false});
+
+            stage.addChild(graphics);
 
             // console.log("x", x, "y",y);
 
-            mesh.points[x][y] = {
-                graphics: point,
+            let point = {
+                graphics: graphics,
                 coordinates: {x: (x + 0.5)/SIZE_X - 0.5, y: (y + 0.5)/SIZE_Y - 0.5}
             };
+
+            graphics.on("pointermove", event => {
+                if(graphics.is_dragging) {
+                    // graphics.x = event.data.global.x;
+                    // graphics.y = event.data.global.y;
+
+                    point.coordinates = convert_inv(event.data.global);
+                }
+            });
+
+            mesh.points[x][y] = point;
 
             // create edges
             for(let i = 0; i < 4; i++) {
@@ -101,9 +123,14 @@ function app(pixi) {
         y: (MARGIN + (origin.y + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.height,
     });
 
+    let convert_inv = (point) => ({
+        x: ((point.x - (pixi.renderer.width - pixi.renderer.height)/2)/ pixi.renderer.height - MARGIN) / (1 - MARGIN * 2) - 0.5,
+        y: (point.y / pixi.renderer.height - MARGIN) / (1 - MARGIN * 2) - 0.5
+    });
+
     PIXI.utils.sayHello("mesh hello!");
 
-    create_mesh(stage, convert);
+    create_mesh(stage, convert_inv);
 
     // console.log(mesh.edges);
 
