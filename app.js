@@ -6,41 +6,56 @@ function key_handler(key_code, value) {
     console.log(key_code, value ? "pressed" : "released");
 }
 
-function update(delta, now) {
+let mesh = {
+    points: [],
+    edges: []
+};
 
+function update(delta, now, convert) {
+    mesh.points.forEach(item => {
+        let point = convert(item.coordinates);
+        item.graphic.x = point.x;
+        item.graphic.y = point.y;
+    })
 }
 
 let intro_scene;
 
+const SIZE_X = 10;
+const SIZE_Y = 10;
+
+
+
 function create_mesh(stage) {
-    const LINE_WIDTH = 8;
+    for(let x = -SIZE_X/2; x < SIZE_X/2; x++) {
+        for(let y = -SIZE_Y/2; y < SIZE_Y/2; y++) {
 
-    /*
-    let point = new Graphics()
-        .lineStyle(LINE_WIDTH, "#4499FF", 2)
-        .drawCircle(200, 100, 10);
-    */
+            let point = new Graphics()
+                .lineStyle(0, 0, 0)
+                .beginFill(0x4499FF, 1)
+                .drawCircle(0, 0, 5);
 
-    /*
-    point.visible = true;
+            stage.addChild(point);
 
-    let mesh = new Container();
-
-    mesh.addChild(point);
-    mesh.visible = true;
-
-    stage.addChild(mesh);
-    */
+            mesh.points.push({
+                graphic: point,
+                coordinates: {x: x/SIZE_X, y: y/SIZE_Y}
+            });
+        }
+    }
 }
 
 function app(pixi) {
     let stage = pixi.stage;
 
-    PIXI.utils.sayHello("mesh hello!");
+    const MARGIN = 0.05;
 
-    intro_scene = Intro_scene(pixi);
-    intro_scene.visible = false;
-    stage.addChild(intro_scene);
+    let convert = (origin) => ({
+        x: (MARGIN + (origin.x/2 + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.width,
+        y: (MARGIN + (origin.y/2 + 0.5) * (1 - MARGIN * 2)) * pixi.renderer.height,
+    });
+
+    PIXI.utils.sayHello("mesh hello!");
 
     window.addEventListener(
         "keydown",
@@ -62,24 +77,7 @@ function app(pixi) {
         false
     );
 
-    pixi.ticker.add(delta => update(delta, performance.now()));
+    pixi.ticker.add(delta => update(delta, performance.now(), convert));
 
-    select_scene(intro_scene);
-
-    // create_mesh(stage);
-}
-
-let current_scene = null;
-let back_scene = null;
-
-function select_scene(scene, params) {
-    if(current_scene !== null) {
-        current_scene.visible = false;
-    }
-    scene.visible = true;
-    current_scene = scene;
-
-    update = scene.update;
-    key_handler = scene.key_handler;
-    scene.select(params);
+    create_mesh(stage, convert);
 }
